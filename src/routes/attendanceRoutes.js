@@ -30,26 +30,32 @@ router.get('/attendance/user/:userId', async (req, res) => {
   }
 });
 
-// 특정 기간 동안의 동시접속자 기록을 조회하는 라우터
+// 특정 날짜에 대한 동시접속자 데이터를 제공하는 라우터
 router.get('/concurrent-users', async (req, res) => {
-  const { start, end } = req.query;
+  const { date } = req.query;
 
   try {
+    const startOfDay = new Date(date);
+    startOfDay.setHours(0, 0, 0, 0);
+
+    const endOfDay = new Date(date);
+    endOfDay.setHours(23, 59, 59, 999);
+
     const query = {
       timestamp: {
-        $gte: new Date(start),
-        $lte: new Date(end),
+        $gte: startOfDay,
+        $lte: endOfDay,
       },
     };
     const records = await ConcurrentUser.find(query).sort({ timestamp: 1 });
     res.json(records);
   } catch (error) {
-    console.error('Error fetching concurrent users:', error); // 로깅 추가
+    console.error('Error fetching concurrent users:', error);
     res.status(500).send(error.toString());
   }
 });
 
-// 날짜 목록을 반환하는 라우터
+// 사용 가능한 날짜 목록을 제공하는 라우터
 router.get('/get-dates', async (req, res) => {
   try {
     // 'timestamp' 필드의 모든 고유 날짜를 조회합니다.
