@@ -1,3 +1,4 @@
+import { SOCKET } from './config/env-config.js';
 // usersOnlineModal.js
 export default class UsersOnlineModal {
   constructor() {
@@ -134,28 +135,23 @@ export default class UsersOnlineModal {
     const startDateElement = document.getElementById('startDate');
     const endDateElement = document.getElementById('endDate');
 
-    // // 날짜 값이 있는지 확인
-    // if (
-    //   !startDateElement ||
-    //   !endDateElement ||
-    //   !startDateElement.value ||
-    //   !endDateElement.value
-    // ) {
-    //   console.error(
-    //     'Start date or end date element is missing or not selected.',
-    //   );
-    //   return;
-    // }
-
     const startDate = startDateElement.value;
     const endDate = new Date(startDateElement.value);
+
+    // 날짜 값이 있는지 확인
+    if (!startDate || !endDate) {
+      alert('조회할 날짜를 선택해주세요');
+      return;
+      // window.location.reload();
+    }
+
     endDate.setDate(endDate.getDate() + 1); // 다음 날짜로 설정하여 하루의 끝을 포함
 
-    console.log(startDate, endDate.toISOString(), '들어옴?'); // 수정된 로그
+    // console.log(startDate, endDate.toISOString(), '들어옴?'); // 수정된 로그
 
     axios
       .get(
-        `http://localhost:3500/daily-data?startDate=${startDate}&endDate=${endDate.toISOString()}`,
+        `${SOCKET}/daily-data?startDate=${startDate}&endDate=${endDate.toISOString()}`,
       )
       .then((response) => {
         const data = response.data;
@@ -170,10 +166,14 @@ export default class UsersOnlineModal {
           borderBottom: '1px solid #ccc',
         });
 
+        // 최대 접속 시간을 소수점 한 자리까지만 나오게 처리
+        const maxConnectionTimeFormatted =
+          parseFloat(data.maxConnectionTime).toFixed(1) + ' hours';
+
         const info = [
           data.date,
           data.maxConcurrentUser + ' users',
-          data.maxConnectionTime + ' hours',
+          maxConnectionTimeFormatted,
           'Details',
         ];
         info.forEach((text) => {
