@@ -1,6 +1,7 @@
 import express from 'express';
 import Attendance from '../../schemas/attendance.js';
 import ConcurrentUser from '../../schemas/concurrent-users.js';
+import PaymentLog from '../../schemas/payment-log.js';
 
 const router = express.Router();
 
@@ -111,6 +112,51 @@ router.get('/daily-data', async (req, res) => {
     });
   } catch (error) {
     res.status(500).send(error.toString());
+  }
+});
+
+// 클라이언트로부터 데이터를 받아 MongoDB에 저장
+router.post('/saveAttendance', async (req, res) => {
+  try {
+    const {
+      email,
+      spaceClassPaymentId,
+      spaceClassPaymentName,
+      spaceClassPaymentPrice,
+    } = req.body; // 클라이언트에서 전달된 데이터를 추출
+
+    // 데이터를 MongoDB에 저장
+    const paymentLog = new PaymentLog({
+      email,
+      spaceClassPaymentId,
+      spaceClassPaymentName,
+      spaceClassPaymentPrice,
+    });
+
+    await paymentLog.save(); // 데이터 저장
+
+    res.status(201).json({ message: '결제로그가 성공적으로 저장되었습니다.' });
+  } catch (error) {
+    console.error('결제로그 저장 오류:', error);
+    res
+      .status(500)
+      .json({ message: '서버 오류로 데이터를 저장할 수 없습니다.' });
+  }
+});
+
+// 서버 라우터에 데이터를 가져오는 엔드포인트 추가
+router.get('/getPaymentLogs', async (req, res) => {
+  try {
+    // MongoDB에서 PaymentLog 모델의 데이터를 가져오기
+    const paymentLogs = await PaymentLog.find();
+
+    // 클라이언트에게 데이터 응답
+    res.status(200).json(paymentLogs);
+  } catch (error) {
+    console.error('데이터를 가져오는 중 오류 발생:', error);
+    res
+      .status(500)
+      .json({ message: '서버 오류로 데이터를 가져올 수 없습니다.' });
   }
 });
 
