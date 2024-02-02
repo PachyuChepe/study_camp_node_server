@@ -8,7 +8,7 @@
     <script src="https://cdn.jsdelivr.net/npm/date-fns"></script>
     <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns"></script>
     <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
-    <script src="chart-script.js" defer></script>
+
     <style>
       body {
         font-family: Arial, sans-serif;
@@ -72,6 +72,9 @@
       button:hover {
         background-color: #45a049;
       }
+      #dateSelect {
+        display: none; /* 에러픽스 끝나면 제거 */
+      }
     </style>
   </head>
   <body>
@@ -108,5 +111,47 @@
         </div>
       </div>
     </div>
+    <script type="module">
+      import UsersOnlineModal from './usersOnlineModal.js';
+
+      document.addEventListener('DOMContentLoaded', () => {
+        const usersOnlineModal = new UsersOnlineModal();
+
+        document
+          .getElementById('dailySalesButton')
+          .addEventListener('click', () => {
+            usersOnlineModal.openModal();
+          });
+      });
+    </script>
+
+    <script type="module">
+      import PaymentRecordsModal from './paymentRecordsModal.js';
+
+      document.addEventListener('DOMContentLoaded', () => {
+        const paymentRecordsModal = new PaymentRecordsModal();
+
+        document
+          .getElementById('paymentListButton')
+          .addEventListener('click', () => {
+            paymentRecordsModal.openModal();
+          });
+      });
+    </script>
+
+    <script type="module">
+      import DailySalesByDateModal from './dailySalesByDateModal.js';
+
+      document.addEventListener('DOMContentLoaded', () => {
+        const dailySalesByDateModal = new DailySalesByDateModal();
+
+        document
+          .getElementById('dailyConcurrentUserButton')
+          .addEventListener('click', () => {
+            dailySalesByDateModal.openModal();
+          });
+      });
+    </script>
+    <script type="module" src="chart-script.js"></script>
   </body>
 </html>

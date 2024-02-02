@@ -1,6 +1,8 @@
+import { SOCKET } from './config/env-config.js';
+
 async function loadDates() {
   try {
-    const response = await axios.get(`http://localhost:3500/get-dates`);
+    const response = await axios.get(`${SOCKET}/get-dates`);
     const dates = response.data;
     const select = document.getElementById('dateSelect');
     dates.forEach((date) => {
@@ -21,21 +23,26 @@ document.getElementById('dateSelect').addEventListener('change', function () {
 
 async function loadChartData(date) {
   try {
-    const response = await axios.get(
-      `http://localhost:3500/concurrent-users?date=${date}`,
-    );
+    const response = await axios.get(`${SOCKET}/concurrent-users?date=${date}`);
     renderChart(response.data);
   } catch (error) {
     console.error('Error loading chart data:', error);
   }
 }
 
+let myChart; // 차트 인스턴스를 저장할 전역 변수
+
 function renderChart(data) {
   const ctx = document.getElementById('concurrentUsersChart').getContext('2d');
   const labels = data.map((record) => new Date(record.timestamp));
   const chartData = data.map((record) => record.count);
 
-  const chart = new Chart(ctx, {
+  if (myChart) {
+    // 기존 차트 인스턴스가 있으면 파괴
+    myChart.destroy();
+  }
+
+  myChart = new Chart(ctx, {
     type: 'line',
     data: {
       labels: labels,
