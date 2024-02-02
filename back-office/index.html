@@ -87,8 +87,8 @@
       <div class="form-container">
         <div class="form-block">
           <div class="input-group">
-            <label for="startDate">시작</label>
-            <input type="datetime-local" id="startDate" name="startDate" />
+            <label for="startDate">조회할 날짜</label>
+            <input type="date" id="startDate" name="startDate" />
           </div>
           <div class="button-group">
             <label for="dailyConcurrentUserButton">날짜별 동접자 수 보기</label>
@@ -96,10 +96,10 @@
           </div>
         </div>
         <div class="form-block">
-          <div class="input-group">
+          <!-- <div class="input-group">
             <label for="endDate">종료</label>
-            <input type="datetime-local" id="endDate" name="endDate" />
-          </div>
+            <input type="date" id="endDate" name="endDate" />
+          </div> -->
           <div class="button-group">
             <label for="paymentListButton">결제목록 보기</label>
             <button id="paymentListButton">보기</button>
@@ -118,7 +118,7 @@
         const usersOnlineModal = new UsersOnlineModal();
 
         document
-          .getElementById('dailySalesButton')
+          .getElementById('dailyConcurrentUserButton')
           .addEventListener('click', () => {
             usersOnlineModal.openModal();
           });
@@ -146,7 +146,7 @@
         const dailySalesByDateModal = new DailySalesByDateModal();
 
         document
-          .getElementById('dailyConcurrentUserButton')
+          .getElementById('dailySalesButton')
           .addEventListener('click', () => {
             dailySalesByDateModal.openModal();
           });
