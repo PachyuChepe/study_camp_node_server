@@ -75,4 +75,43 @@ router.get('/get-dates', async (req, res) => {
   }
 });
 
+// 특정 날짜에 대한 데이터 가져오기
+router.get('/daily-data', async (req, res) => {
+  try {
+    const { startDate, endDate } = req.query;
+    console.log(startDate, endDate, '뜸?');
+    const attendanceData = await Attendance.find({
+      entryTime: { $gte: new Date(startDate) },
+      exitTime: { $lte: new Date(endDate) },
+    });
+
+    const concurrentUserData = await ConcurrentUser.find({
+      timestamp: { $gte: new Date(startDate), $lte: new Date(endDate) },
+    });
+
+    // 최대 동시 접속자 수 계산
+    const maxConcurrentUser = concurrentUserData.reduce(
+      (max, curr) => Math.max(max, curr.count),
+      0,
+    );
+
+    // 접속 시간 계산 로직
+    let totalTime = 0;
+    attendanceData.forEach((data) => {
+      const entryTime = new Date(data.entryTime).getTime();
+      const exitTime = new Date(data.exitTime).getTime();
+      totalTime += exitTime - entryTime;
+    });
+    const maxConnectionTime = Math.max(totalTime / 3600000); // 시간 단위로 변경
+
+    res.json({
+      date: startDate, // 요청받은 시작 날짜를 반환
+      maxConcurrentUser,
+      maxConnectionTime,
+    });
+  } catch (error) {
+    res.status(500).send(error.toString());
+  }
+});
+
 export default router;

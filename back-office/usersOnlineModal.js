@@ -3,7 +3,8 @@ export default class UsersOnlineModal {
   constructor() {
     this.initModal();
     this.createDate();
-    this.createList();
+    // this.createList();
+    this.initEventListeners();
   }
 
   initModal() {
@@ -63,6 +64,7 @@ export default class UsersOnlineModal {
       border: '1px solid #ccc',
       borderRadius: '5px',
     });
+    this.select.style.display = 'none'; // <select> 태그 숨기기
     this.modal.appendChild(this.select);
 
     this.container = document.createElement('div');
@@ -129,24 +131,72 @@ export default class UsersOnlineModal {
   }
 
   createList() {
-    // Dynamically create and add list items to the listContainer
-    for (let i = 0; i < 10; i++) {
-      const listItem = document.createElement('div');
-      this.setStyle(listItem, {
-        display: 'grid',
-        gridTemplateColumns: 'repeat(4, 1fr)',
-        gap: '10px',
-        padding: '10px',
-        borderBottom: '1px solid #ccc',
-      });
+    const startDateElement = document.getElementById('startDate');
+    const endDateElement = document.getElementById('endDate');
 
-      ['User ' + i, '09:00', '17:00', '8 hours'].forEach((text) => {
-        const item = document.createElement('div');
-        item.textContent = text;
-        listItem.appendChild(item);
-      });
+    // // 날짜 값이 있는지 확인
+    // if (
+    //   !startDateElement ||
+    //   !endDateElement ||
+    //   !startDateElement.value ||
+    //   !endDateElement.value
+    // ) {
+    //   console.error(
+    //     'Start date or end date element is missing or not selected.',
+    //   );
+    //   return;
+    // }
 
-      this.listContainer.appendChild(listItem);
-    }
+    const startDate = startDateElement.value;
+    const endDate = new Date(startDateElement.value);
+    endDate.setDate(endDate.getDate() + 1); // 다음 날짜로 설정하여 하루의 끝을 포함
+
+    console.log(startDate, endDate.toISOString(), '들어옴?'); // 수정된 로그
+
+    axios
+      .get(
+        `http://localhost:3500/daily-data?startDate=${startDate}&endDate=${endDate.toISOString()}`,
+      )
+      .then((response) => {
+        const data = response.data;
+        this.listContainer.innerHTML = ''; // 리스트 초기화
+
+        const listItem = document.createElement('div');
+        this.setStyle(listItem, {
+          display: 'grid',
+          gridTemplateColumns: 'repeat(4, 1fr)',
+          gap: '10px',
+          padding: '10px',
+          borderBottom: '1px solid #ccc',
+        });
+
+        const info = [
+          data.date,
+          data.maxConcurrentUser + ' users',
+          data.maxConnectionTime + ' hours',
+          'Details',
+        ];
+        info.forEach((text) => {
+          const item = document.createElement('div');
+          item.textContent = text;
+          this.setStyle(item, {
+            textAlign: 'center', // 텍스트를 중앙으로 정렬
+          });
+          listItem.appendChild(item);
+        });
+
+        this.listContainer.appendChild(listItem);
+      })
+      .catch((error) => {
+        console.error('Error fetching data:', error);
+      });
+  }
+
+  initEventListeners() {
+    document
+      .getElementById('dailyConcurrentUserButton')
+      .addEventListener('click', () => {
+        this.createList(); // 버튼 클릭 시 createList 메소드 호출
+      });
   }
 }
