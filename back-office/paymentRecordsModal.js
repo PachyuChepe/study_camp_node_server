@@ -132,62 +132,54 @@ export default class PaymentRecordsModal {
     });
   }
 
+  // paymentRecordsModal.js의 createList 함수 수정
   createList() {
-    // const startDateElement = document.getElementById('startDate');
-    // const endDateElement = document.getElementById('endDate');
-    // // // 날짜 값이 있는지 확인
-    // // if (
-    // //   !startDateElement ||
-    // //   !endDateElement ||
-    // //   !startDateElement.value ||
-    // //   !endDateElement.value
-    // // ) {
-    // //   console.error(
-    // //     'Start date or end date element is missing or not selected.',
-    // //   );
-    // //   return;
-    // // }
-    // const startDate = startDateElement.value;
-    // const endDate = new Date(startDateElement.value);
-    // endDate.setDate(endDate.getDate() + 1); // 다음 날짜로 설정하여 하루의 끝을 포함
-    // console.log(startDate, endDate.toISOString(), '들어옴?'); // 수정된 로그
-    // axios
-    //   .get(
-    //     `${SOCKET}/daily-data?startDate=${startDate}&endDate=${endDate.toISOString()}`,
-    //   )
-    //   .then((response) => {
-    //     const data = response.data;
-    //     this.listContainer.innerHTML = ''; // 리스트 초기화
-    //     const listItem = document.createElement('div');
-    //     this.setStyle(listItem, {
-    //       display: 'grid',
-    //       gridTemplateColumns: 'repeat(4, 1fr)',
-    //       gap: '10px',
-    //       padding: '10px',
-    //       borderBottom: '1px solid #ccc',
-    //     });
-    //     // 최대 접속 시간을 소수점 한 자리까지만 나오게 처리
-    //     const maxConnectionTimeFormatted =
-    //       parseFloat(data.maxConnectionTime).toFixed(1) + ' hours';
-    //     const info = [
-    //       data.date,
-    //       data.maxConcurrentUser + ' users',
-    //       maxConnectionTimeFormatted,
-    //       'Details',
-    //     ];
-    //     info.forEach((text) => {
-    //       const item = document.createElement('div');
-    //       item.textContent = text;
-    //       this.setStyle(item, {
-    //         textAlign: 'center', // 텍스트를 중앙으로 정렬
-    //       });
-    //       listItem.appendChild(item);
-    //     });
-    //     this.listContainer.appendChild(listItem);
-    //   })
-    //   .catch((error) => {
-    //     console.error('Error fetching data:', error);
-    //   });
+    axios
+      .get(`${SOCKET}/getPaymentLogs`)
+      .then((response) => {
+        const paymentLogs = response.data;
+        this.listContainer.innerHTML = ''; // 리스트 초기화
+
+        paymentLogs.forEach((log) => {
+          const listItem = document.createElement('div');
+          this.setStyle(listItem, {
+            display: 'grid',
+            gridTemplateColumns: 'repeat(4, 1fr)',
+            gap: '10px',
+            padding: '10px',
+            borderBottom: '1px solid #ccc',
+          });
+
+          // 시간을 '년-월-일' 형식으로 변환
+          const date = new Date(log.createdAt);
+          const formattedDate = date.toLocaleDateString('ko-KR', {
+            year: 'numeric',
+            month: '2-digit',
+            day: '2-digit',
+          });
+          console.log(formattedDate, 'formattedDate');
+          const info = [
+            formattedDate,
+            log.email,
+            log.spaceClassPaymentPrice,
+            'Details',
+          ];
+
+          info.forEach((text) => {
+            const item = document.createElement('div');
+            item.textContent = text;
+            this.setStyle(item, {
+              textAlign: 'center', // 텍스트를 중앙으로 정렬
+            });
+            listItem.appendChild(item);
+          });
+
+          this.listContainer.appendChild(listItem);
+        });
+      })
+      .catch((error) => {
+        console.error('Error fetching data:', error);
+      });
   }
 
   initEventListeners() {
