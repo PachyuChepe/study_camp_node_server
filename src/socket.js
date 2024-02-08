@@ -72,6 +72,7 @@ export default function socket(socketIo) {
             await lastAttendance.save();
           }
         }
+        socket.leave(`space ${userdata.spaceId}`);
 
         socketIo.sockets
           .to(`space ${userdata.spaceId}`)
@@ -168,6 +169,16 @@ export default function socket(socketIo) {
       }
 
       socket.emit('spaceUsers', spaceUsers);
+    });
+
+    socket.on('leave', (data) => {
+      const userdata = userMap.get(data.id);
+      socketIo.sockets
+        .to(`space ${userdata.spaceId}`)
+        .emit('leaveSpace', userdata);
+      socket.leave(`space ${userdata.spaceId}`);
+      userdata.spaceId = 0;
+      userMap.set(data.id, userdata);
     });
 
     socket.on('move', (data) => {
