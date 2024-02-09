@@ -4,18 +4,12 @@ import { configDotenv } from 'dotenv';
 configDotenv();
 import attendanceRoutes from './src/routes/attendanceRoutes.js';
 import { Server } from 'socket.io';
+import { createAdapter } from '@socket.io/redis-adapter';
+import Redis from 'ioredis';
 import cors from 'cors';
 import socket from './src/socket.js';
-import { createAdapter } from '@socket.io/redis-adapter';
-import { createClient } from 'redis';
 import connectToDatabase from './mongodb.js';
 connectToDatabase();
-
-// Redis 클라이언트 생성
-const pubClient = createClient({
-  url: `redis://${process.env.REDIS_USERNAME}:${process.env.REDIS_PASSWORD}@${process.env.REDIS_HOST}:${process.env.REDIS_PORT}/0`,
-});
-const subClient = pubClient.duplicate();
 
 const app = express();
 app.use(express.json());
@@ -39,22 +33,15 @@ const io = new Server(server, {
   },
 });
 
-(async () => {
-  await pubClient.connect();
-  await subClient.connect();
+// Redis 클라이언트 생성 및 어댑터 설정
+const redisUrl = `redis://${process.env.REDIS_USERNAME}:${process.env.REDIS_PASSWORD}@${process.env.REDIS_HOST}:${process.env.REDIS_PORT}`;
+const pubClient = new Redis(redisUrl);
+const subClient = pubClient.duplicate();
 
-  // socket.io-redis 어댑터 설정
-  io.adapter(createAdapter(pubClient, subClient));
-  socket(io);
-  server.listen(process.env.PORT, () => {
-    console.log(`Server listening on port  ${process.env.PORT}`);
-  });
-})();
+io.adapter(createAdapter(pubClient, subClient));
 
-// // setupRedisAdapter(io).then(() => {
-// socket(io);
-// // });
+socket(io);
 
-// server.listen(process.env.PORT, () => {
-//   console.log(`Server running on port ${process.env.PORT}`);
-// });
+server.listen(process.env.PORT, () => {
+  console.log(`Server running on port ${process.env.PORT}`);
+});
