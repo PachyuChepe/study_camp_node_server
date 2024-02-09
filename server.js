@@ -40,6 +40,16 @@ const subClient = pubClient.duplicate();
 
 io.adapter(createAdapter(pubClient, subClient));
 
+pubClient.on('connect', () =>
+  console.log('Publisher client connected to Redis'),
+);
+subClient.on('connect', () =>
+  console.log('Subscriber client connected to Redis'),
+);
+
+pubClient.on('error', (err) => console.log('Redis Pub Client Error', err));
+subClient.on('error', (err) => console.log('Redis Sub Client Error', err));
+
 socket(io);
 
 server.listen(process.env.PORT, () => {
