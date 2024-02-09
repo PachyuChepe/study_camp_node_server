@@ -6,6 +6,7 @@ import attendanceRoutes from './src/routes/attendanceRoutes.js';
 import { Server } from 'socket.io';
 import cors from 'cors';
 import socket from './src/socket.js';
+import setupRedisAdapter from './src/redis/setupSocketIOWithRedis.js';
 import connectToDatabase from './mongodb.js';
 connectToDatabase();
 
@@ -22,7 +23,6 @@ app.use(
 
 // 출석 관련 라우트 추가
 app.use(attendanceRoutes);
-
 app.use(express.static('back-office'));
 
 const io = new Server(server, {
@@ -32,8 +32,10 @@ const io = new Server(server, {
   },
 });
 
-socket(io);
+setupRedisAdapter(io).then(() => {
+  socket(io);
+});
 
 server.listen(process.env.PORT, () => {
-  console.log(`run`);
+  console.log(`Server running on port ${process.env.PORT}`);
 });
