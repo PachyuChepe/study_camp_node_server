@@ -27,7 +27,14 @@ app.use(express.static('back-office'));
 
 const io = new Server(server, {
   cors: {
-    origin: [process.env.CLIENT, process.env.SOCKET, process.env.DB],
+    origin: [
+      process.env.CLIENT,
+      process.env.SOCKET,
+      process.env.DB,
+      process.env.CLIENT_WSS,
+      process.env.SOCKET_WSS,
+      process.env.DB_WSS,
+    ],
     credentials: true,
   },
 });
