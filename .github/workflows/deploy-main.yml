@@ -49,7 +49,12 @@ jobs:
                   value: ${{ secrets.REDIS_HOST }}
                 - name: REDIS_PORT
                   value: ${{ secrets.REDIS_PORT }}
-
+                - name: CLIENT_WSS
+                  value: ${{ secrets.CLIENT_WSS }}
+                - name: SOCKET_WSS
+                  value: ${{ secrets.SOCKET_WSS }}
+                - name: DB_WSS
+                  value: ${{ secrets.DB_WSS }}
               ports: "3500"
             context:
               git:
