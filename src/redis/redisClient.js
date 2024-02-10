@@ -1,4 +1,6 @@
-// redisClient.js
+// src/redis/redisClient.js
+import { configDotenv } from 'dotenv';
+configDotenv();
 import redis from 'redis';
 
 // Redis 클라이언트 인스턴스 생성
