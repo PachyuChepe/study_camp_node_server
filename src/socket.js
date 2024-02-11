@@ -5,36 +5,38 @@ import schedule from 'node-schedule';
 import AllChat from '../schemas/all-chat.js';
 import DirectMessage from '../schemas/direct-message.js';
 import { configDotenv } from 'dotenv';
-import redisClient from './redis/redisClient.js';
+import { pubClient, subClient } from './redis/redisClient.js';
 configDotenv();
 
 export default function socket(socketIo) {
   let userMap = new Map();
   let connectedUsers = [];
 
-  // Redis 구독 로직 시작
-  const startRedisSubscription = async () => {
-    const subClient = redisClient.duplicate();
-    await subClient.connect();
+  // Redis 채널 이름
+  const CHANNEL = 'USER_STATE_UPDATES';
 
-    // 사용자 업데이트 구독
-    await subClient.subscribe('userUpdates', (message) => {
-      const { type, data } = JSON.parse(message);
-      socketIo.emit(type, data);
-    });
+  // Redis 구독 로직
+  subClient.subscribe(CHANNEL, (message) => {
+    const { userId, action, data } = JSON.parse(message);
 
-    // WebRTC 업데이트 구독
-    await subClient.subscribe('webrtcUpdates', (message) => {
-      const { type, data } = JSON.parse(message);
-      if (data.to) {
-        socketIo.to(data.to).emit(type, data);
-      } else {
-        socketIo.emit(type, data);
-      }
-    });
-  };
+    switch (action) {
+      case 'update':
+        // 사용자 데이터 업데이트 로직
+        userMap.set(userId, data);
+        if (!connectedUsers.includes(userId)) {
+          connectedUsers.push(userId);
+        }
+        break;
+      case 'disconnect':
+        // 사용자 연결 해제 로직
+        userMap.delete(userId);
+        connectedUsers = connectedUsers.filter((id) => id !== userId);
+        break;
+    }
 
-  startRedisSubscription().catch(console.error);
+    // 서버 사이드 데이터가 업데이트 되었음을 콘솔에 로깅
+    console.log(`Data updated for user ${userId}: ${action}`);
+  });
 
   socketIo.on('connection', (socket) => {
     socket.join('outLayer');
@@ -108,6 +110,10 @@ export default function socket(socketIo) {
           .emit('disconnected', socket.id);
       }
 
+      pubClient.publish(
+        CHANNEL,
+        JSON.stringify({ userId: socket.id, action: 'disconnect' }),
+      );
       userMap.delete(socket.id);
       updateConnectedUsersCount();
     });
@@ -193,6 +199,13 @@ export default function socket(socketIo) {
         await newAttendance.save();
       }
 
+      // Redis에 사용자 상태 업데이트 발행
+      const userData = { ...userdata }; // 사용자 데이터를 복사
+      pubClient.publish(
+        CHANNEL,
+        JSON.stringify({ userId: socket.id, action: 'update', data: userData }),
+      );
+
       socket.emit('spaceUsers', spaceUsers);
     });
 
@@ -214,6 +227,12 @@ export default function socket(socketIo) {
       socketIo.sockets
         .to(`space ${userdata.spaceId}`)
         .emit('movePlayer', userdata);
+
+      // Redis에 사용자 상태 업데이트 발행
+      pubClient.publish(
+        CHANNEL,
+        JSON.stringify({ userId: data.id, action: 'update', data: userdata }),
+      );
     });
 
     socket.on('sit', (data) => {
@@ -308,51 +327,27 @@ export default function socket(socketIo) {
       socket.broadcast.emit('update-user-list', { userIds: spaceUsers });
     });
 
-    // socket.on('mediaOffer', (data) => {
-    //   console.log('[서버] offer 받음 ');
-    //   socket.to(data.to).emit('mediaOffer', {
-    //     from: data.from,
-    //     offer: data.offer,
-    //   });
-    // });
-
     socket.on('mediaOffer', (data) => {
-      const message = JSON.stringify({
-        type: 'mediaOffer',
-        data: { ...data, from: socket.id },
+      console.log('[서버] offer 받음 ');
+      socket.to(data.to).emit('mediaOffer', {
+        from: data.from,
+        offer: data.offer,
       });
-      redisClient.publish('webrtcUpdates', message);
     });
-
-    // socket.on('mediaAnswer', (data) => {
-    //   console.log('[서버] answer 받음');
-    //   socket.to(data.to).emit('mediaAnswer', {
-    //     from: data.from,
-    //     answer: data.answer,
-    //   });
-    // });
 
     socket.on('mediaAnswer', (data) => {
-      const message = JSON.stringify({
-        type: 'mediaAnswer',
-        data: { ...data, from: socket.id },
+      console.log('[서버] answer 받음');
+      socket.to(data.to).emit('mediaAnswer', {
+        from: data.from,
+        answer: data.answer,
       });
-      redisClient.publish('webrtcUpdates', message);
     });
 
-    // socket.on('iceCandidate', (data) => {
-    //   socket.to(data.to).emit('remotePeerIceCandidate', {
-    //     from: data.from,
-    //     candidate: data.candidate,
-    //   });
-    // });
-
     socket.on('iceCandidate', (data) => {
-      const message = JSON.stringify({
-        type: 'iceCandidate',
-        data: { ...data, from: socket.id },
+      socket.to(data.to).emit('remotePeerIceCandidate', {
+        from: data.from,
+        candidate: data.candidate,
       });
-      redisClient.publish('webrtcUpdates', message);
     });
 
     socket.on('AllChatHistory', async (data) => {
