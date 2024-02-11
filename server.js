@@ -11,7 +11,7 @@ import connectToDatabase from './mongodb.js';
 connectToDatabase();
 
 import { createAdapter } from '@socket.io/redis-adapter';
-import redisClient from './src/redis/redisClient.js';
+import { pubClient, subClient } from './src/redis/redisClient.js'; // 수정된 임포트 구문
 
 const app = express();
 app.use(express.json());
@@ -37,15 +37,7 @@ const io = new Server(server, {
 });
 
 // Redis 어댑터 설정
-const pubClient = redisClient.duplicate();
-Promise.all([redisClient.connect(), pubClient.connect()])
-  .then(() => {
-    io.adapter(createAdapter(redisClient, pubClient));
-    console.log('Redis Adapter set successfully');
-  })
-  .catch((error) =>
-    console.error(`Failed to connect Redis or set adapter: ${error}`),
-  );
+io.adapter(createAdapter(pubClient, subClient));
 
 socket(io);
 
