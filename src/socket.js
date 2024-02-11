@@ -198,9 +198,9 @@ export default function socket(socketIo) {
         });
         await newAttendance.save();
       }
-
       // Redis에 사용자 상태 업데이트 발행
-      const userData = { ...userdata }; // 사용자 데이터를 복사
+      const userData = await { ...userdata }; // 사용자 데이터를 복사
+      console.log(userData, '데이터 갱신된거 확실히 들어옴?');
       pubClient.publish(
         CHANNEL,
         JSON.stringify({ userId: socket.id, action: 'update', data: userData }),
