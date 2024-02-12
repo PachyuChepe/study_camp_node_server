@@ -35,7 +35,7 @@ export default function socket(socketIo) {
     }
 
     // 서버 사이드 데이터가 업데이트 되었음을 콘솔에 로깅
-    console.log(`Data updated for user ${userId}: ${action}`);
+    // console.log(`Data updated for user ${userId}: ${action}`);
   });
 
   socketIo.on('connection', (socket) => {
@@ -119,12 +119,6 @@ export default function socket(socketIo) {
     });
 
     socket.on('joinSpace', async (data) => {
-      //JWT토큰을 해석해서 member_id를 넣어라.
-      //이건 좀 생각해봐야겠다.
-      //엑세스 토큰 받음
-      //accessToken의 sub값이 userId값이다.
-      //여기서 conflict났다.
-
       console.log('joinSpace:', data);
       const userdata = userMap.get(socket.id);
       userdata.nickName = data.nickName;
@@ -200,7 +194,6 @@ export default function socket(socketIo) {
       }
       // Redis에 사용자 상태 업데이트 발행
       const userData = await { ...userdata }; // 사용자 데이터를 복사
-      console.log(userData, '데이터 갱신된거 확실히 들어옴?');
       pubClient.publish(
         CHANNEL,
         JSON.stringify({ userId: socket.id, action: 'update', data: userData }),
@@ -271,7 +264,7 @@ export default function socket(socketIo) {
         nick_name: data.nickName,
         message: data.message,
         member_id: userMap.get(data.id).memberId,
-        //#TODO {isTrusted: true}가 뜬다 일단 미뤄두자 이거 생각한다고 몇시간을쓰냐
+
         space_id: data.spaceId,
       });
     });
@@ -281,12 +274,7 @@ export default function socket(socketIo) {
         senderId: data.senderId,
         message: data.message,
       });
-      // console.log('DMDATA=>', data);
-      // console.log('userMap in DMChat:', userMap);
-      //userMap에서 이름을 가져와보자.
-      //일단 테스트용도
-      //출력이되는지좀 보자.
-      //1번 게더 닉과 센더 닉이 없다.
+
       //TODO getter_id
       DirectMessage.create({
         sender_id: userMap.get(data.senderId).memberId,
@@ -301,8 +289,6 @@ export default function socket(socketIo) {
       for (let room of socket.rooms) {
         //모든 Room을 끊는다. 이건 매우 위험한 짓이다. 하지만 이렇게 해야 한다.
         //나중에 문제가 되면 if문에 조건을 더 걸자.
-        //실행가능하길 빌자
-        // console.log('room', room);
         if (room !== socket.id && !room.includes('space')) {
           socket.leave(room);
         }
