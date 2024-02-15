@@ -14,6 +14,7 @@ export default function socket(socketIo) {
 
   // Redis 채널 이름
   const CHANNEL = 'USER_STATE_UPDATES';
+  const WEBRTC_SIGNAL_CHANNEL = 'WEBRTC_SIGNAL'; // WebRTC 시그널링을 위한 채널
 
   // Redis 구독 로직
   subClient.subscribe(CHANNEL, (message) => {
@@ -36,6 +37,26 @@ export default function socket(socketIo) {
 
     // 서버 사이드 데이터가 업데이트 되었음을 콘솔에 로깅
     // console.log(`Data updated for user ${userId}: ${action}`);
+  });
+
+  // WebRTC 시그널링 메시지를 위한 Redis 구독
+  subClient.subscribe(WEBRTC_SIGNAL_CHANNEL, (message) => {
+    const signalData = JSON.parse(message);
+    const { type, from, to, offer, answer, candidate } = signalData;
+
+    // 시그널링 메시지를 적절한 소켓에 전달
+    switch (type) {
+      case 'offer':
+        socketIo.to(to).emit('mediaOffer', { from, offer });
+        break;
+      case 'answer':
+        socketIo.to(to).emit('mediaAnswer', { from, answer });
+        break;
+      case 'iceCandidate':
+        socketIo.to(to).emit('remotePeerIceCandidate', { from, candidate });
+        break;
+      // 추가 시그널링 메시지 유형 처리...
+    }
   });
 
   socketIo.on('connection', (socket) => {
@@ -319,6 +340,16 @@ export default function socket(socketIo) {
         from: data.from,
         offer: data.offer,
       });
+
+      const signalData = {
+        type: 'offer',
+        from: data.from,
+        to: data.to,
+        offer: data.offer,
+      };
+
+      // Redis를 통해 시그널링 데이터 전송
+      pubClient.publish(WEBRTC_SIGNAL_CHANNEL, JSON.stringify(signalData));
     });
 
     socket.on('mediaAnswer', (data) => {
@@ -327,6 +358,15 @@ export default function socket(socketIo) {
         from: data.from,
         answer: data.answer,
       });
+
+      const signalData = {
+        type: 'answer',
+        from: data.from,
+        to: data.to,
+        answer: data.answer,
+      };
+
+      pubClient.publish(WEBRTC_SIGNAL_CHANNEL, JSON.stringify(signalData));
     });
 
     socket.on('iceCandidate', (data) => {
@@ -334,6 +374,15 @@ export default function socket(socketIo) {
         from: data.from,
         candidate: data.candidate,
       });
+
+      const signalData = {
+        type: 'iceCandidate',
+        from: data.from,
+        to: data.to,
+        candidate: data.candidate,
+      };
+
+      pubClient.publish(WEBRTC_SIGNAL_CHANNEL, JSON.stringify(signalData));
     });
 
     socket.on('AllChatHistory', async (data) => {
