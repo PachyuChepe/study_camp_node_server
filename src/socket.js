@@ -335,11 +335,11 @@ export default function socket(socketIo) {
     });
 
     socket.on('mediaOffer', (data) => {
-      console.log('[서버] offer 받음 ');
-      socket.to(data.to).emit('mediaOffer', {
-        from: data.from,
-        offer: data.offer,
-      });
+      // console.log('[서버] offer 받음 ');
+      // socket.to(data.to).emit('mediaOffer', {
+      //   from: data.from,
+      //   offer: data.offer,
+      // });
 
       const signalData = {
         type: 'offer',
@@ -353,11 +353,11 @@ export default function socket(socketIo) {
     });
 
     socket.on('mediaAnswer', (data) => {
-      console.log('[서버] answer 받음');
-      socket.to(data.to).emit('mediaAnswer', {
-        from: data.from,
-        answer: data.answer,
-      });
+      // console.log('[서버] answer 받음');
+      // socket.to(data.to).emit('mediaAnswer', {
+      //   from: data.from,
+      //   answer: data.answer,
+      // });
 
       const signalData = {
         type: 'answer',
@@ -370,10 +370,10 @@ export default function socket(socketIo) {
     });
 
     socket.on('iceCandidate', (data) => {
-      socket.to(data.to).emit('remotePeerIceCandidate', {
-        from: data.from,
-        candidate: data.candidate,
-      });
+      // socket.to(data.to).emit('remotePeerIceCandidate', {
+      //   from: data.from,
+      //   candidate: data.candidate,
+      // });
 
       const signalData = {
         type: 'iceCandidate',
