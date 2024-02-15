@@ -1,5 +1,5 @@
 // src/redis/redisClient.js
-import { createClient } from 'redis'; // 수정된 임포트 구문
+import { createClient } from 'redis';
 import { configDotenv } from 'dotenv';
 configDotenv();
 
