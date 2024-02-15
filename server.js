@@ -42,5 +42,5 @@ io.adapter(createAdapter(pubClient, subClient));
 socket(io);
 
 server.listen(process.env.PORT, () => {
-  console.log(`run`);
+  console.log(`socket server running on port ${process.env.PORT}`);
 });
