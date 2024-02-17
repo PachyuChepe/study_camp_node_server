@@ -136,9 +136,9 @@ export default function socket(socketIo) {
       userdata.clothes = data.clothes;
       userdata.clothes_color = data.clothes_color;
       userMap.set(socket.id, userdata);
-      socket.join(`space ${data.spaceId}`);
+      socket.join(`space_${data.spaceId}`);
       socketIo.sockets
-        .to(`space ${data.spaceId}`)
+        .to(`space_${data.spaceId}`)
         .emit('joinSpacePlayer', userdata);
       const spaceUsers = [...userMap.values()].filter(
         (user) => user.spaceId === data.spaceId,
