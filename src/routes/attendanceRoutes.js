@@ -160,4 +160,9 @@ router.get('/getPaymentLogs', async (req, res) => {
   }
 });
 
+// 헬스체크
+router.get('/health', (req, res) => {
+  res.status(200).send();
+});
+
 export default router;
