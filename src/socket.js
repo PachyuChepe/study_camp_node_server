@@ -369,7 +369,7 @@ export default function socket(socketIo) {
     });
   });
 
-  // 1분 간격으로 동시접속자 수를 데이터베이스에 저장
+  // 폴링 - 1분 간격으로 동시접속자 수를 데이터베이스에 저장
   schedule.scheduleJob('*/1 * * * *', function () {
     const concurrentUsersRecord = new ConcurrentUser({
       count: connectedUsers.length,
