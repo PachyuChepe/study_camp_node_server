@@ -39,7 +39,7 @@ export default function socket(socketIo) {
   });
 
   socketIo.on('connection', (socket) => {
-    socket.join('outLayer');
+    // socket.join('outLayer');
     console.log(socket.id, 'user connected');
     //유저데이터에 memberId를 추가했다.
     const userdata = {
@@ -57,6 +57,7 @@ export default function socket(socketIo) {
       clothes: 0,
       clothes_color: 0,
       isSit: false,
+      layer: 'out',
     };
 
     userMap.set(socket.id, userdata);
@@ -99,14 +100,14 @@ export default function socket(socketIo) {
             await lastAttendance.save();
           }
         }
-        socket.leave(`space ${userdata.spaceId}`);
+        socket.leave(`space_${userdata.spaceId}`);
 
         socketIo.sockets
-          .to(`space ${userdata.spaceId}`)
+          .to(`space_${userdata.spaceId}`)
           .emit('leaveSpace', userdata);
 
         socketIo.sockets
-          .to(`space ${userdata.spaceId}`)
+          .to(`space_${userdata.spaceId}`)
           .emit('disconnected', socket.id);
       }
 
@@ -135,9 +136,9 @@ export default function socket(socketIo) {
       userdata.clothes = data.clothes;
       userdata.clothes_color = data.clothes_color;
       userMap.set(socket.id, userdata);
-      socket.join(`space ${data.spaceId}`);
+      socket.join(`space_${data.spaceId}`);
       socketIo.sockets
-        .to(`space ${data.spaceId}`)
+        .to(`space_${data.spaceId}`)
         .emit('joinSpacePlayer', userdata);
       const spaceUsers = [...userMap.values()].filter(
         (user) => user.spaceId === data.spaceId,
@@ -206,9 +207,9 @@ export default function socket(socketIo) {
     socket.on('leave', (data) => {
       const userdata = userMap.get(data.id);
       socketIo.sockets
-        .to(`space ${userdata.spaceId}`)
+        .to(`space_${userdata.spaceId}`)
         .emit('leaveSpace', userdata);
-      socket.leave(`space ${userdata.spaceId}`);
+      socket.leave(`space_${userdata.spaceId}`);
       userdata.spaceId = 0;
       userMap.set(data.id, userdata);
     });
@@ -219,7 +220,7 @@ export default function socket(socketIo) {
       userdata.y = data.y;
       userMap.set(data.id, userdata);
       socketIo.sockets
-        .to(`space ${userdata.spaceId}`)
+        .to(`space_${userdata.spaceId}`)
         .emit('movePlayer', userdata);
 
       // Redis에 사용자 상태 업데이트 발행
@@ -229,12 +230,25 @@ export default function socket(socketIo) {
       );
     });
 
+    socket.on('innerLayer', (data) => {
+      const userdata = userMap.get(data.id);
+      socket.leave(`space_${userdata.spaceId}_${userdata.layer}`);
+
+      userdata.layer = data.layer;
+      userMap.set(data.id, userdata);
+      socket.join(`space_${userdata.spaceId}_${data.layer}`);
+
+      socketIo.sockets
+        .to(`space_${userdata.spaceId}_${data.layer}`)
+        .emit('innerLayerPlayer', userdata);
+    });
+
     socket.on('sit', (data) => {
       const userdata = userMap.get(data.id);
       userdata.isSit = data.isSit;
       userMap.set(data.id, userdata);
       socketIo.sockets
-        .to(`space ${userdata.spaceId}`)
+        .to(`space_${userdata.spaceId}`)
         .emit('sitPlayer', userdata);
     });
 
@@ -248,13 +262,13 @@ export default function socket(socketIo) {
       userdata.clothes_color = data.clothes_color;
       userMap.set(data.id, userdata);
       socketIo.sockets
-        .to(`space ${userdata.spaceId}`)
+        .to(`space_${userdata.spaceId}`)
         .emit('updateSkinPlayer', userdata);
     });
 
     socket.on('chat', (data) => {
       // id, message
-      socketIo.sockets.to(`space ${userdata.spaceId}`).emit('chatPlayer', {
+      socketIo.sockets.to(`space_${userdata.spaceId}`).emit('chatPlayer', {
         id: socket.id,
         nickName: data.nickName,
         message: data.message,
@@ -287,20 +301,14 @@ export default function socket(socketIo) {
     });
 
     socket.on('groupChat', (data) => {
-      for (let room of socket.rooms) {
-        //모든 Room을 끊는다. 이건 매우 위험한 짓이다. 하지만 이렇게 해야 한다.
-        //나중에 문제가 되면 if문에 조건을 더 걸자.
-        if (room !== socket.id && !room.includes('space')) {
-          socket.leave(room);
-        }
-      }
-
-      socket.join(data.room);
-      socketIo.sockets.to(data.room).emit('chatInGroup', {
-        message: data.message,
-        senderSocketId: data.senderId,
-        senderNickName: data.nickName,
-      });
+      const userdata = userMap.get(data.senderId);
+      socketIo.sockets
+        .to(`space_${userdata.spaceId}_${userdata.layer}`)
+        .emit('chatInGroup', {
+          message: data.message,
+          senderSocketId: data.senderId,
+          senderNickName: data.nickName,
+        });
     });
 
     // wecRTC
